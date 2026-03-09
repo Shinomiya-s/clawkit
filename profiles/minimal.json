@@ -1,0 +1,8 @@
+{
+  "name": "minimal",
+  "description": "Bare minimum to get started",
+  "skills": [
+    "skill-vetter",
+    "mcp-duckgo"
+  ]
+}

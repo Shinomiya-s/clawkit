@@ -1,0 +1,26 @@
+{
+  "name": "essential",
+  "description": "Core skills for new OpenClaw users",
+  "skills": [
+    {
+      "name": "skill-vetter",
+      "description": "Security-first skill auditing before installation",
+      "source": "clawhub"
+    },
+    {
+      "name": "self-improving-agent",
+      "description": "AI self-improvement and memory system",
+      "source": "clawhub"
+    },
+    {
+      "name": "mcp-duckgo",
+      "description": "Web search and content scraping via DuckDuckGo",
+      "source": "clawhub"
+    },
+    {
+      "name": "desktop-control",
+      "description": "Mouse, keyboard, and screen automation",
+      "source": "clawhub"
+    }
+  ]
+}

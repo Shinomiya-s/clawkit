@@ -1,0 +1,14 @@
+{
+  "name": "developer",
+  "description": "Skills for software development workflows",
+  "skills": [
+    "skill-vetter",
+    "self-improving-agent",
+    "mcp-duckgo",
+    "desktop-control",
+    "git-helper",
+    "code-review",
+    "file-tools",
+    "exa-web-search"
+  ]
+}

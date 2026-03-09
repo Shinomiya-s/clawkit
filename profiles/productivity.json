@@ -1,0 +1,13 @@
+{
+  "name": "productivity",
+  "description": "Daily productivity and utility skills",
+  "skills": [
+    "skill-vetter",
+    "self-improving-agent",
+    "mcp-duckgo",
+    "weather",
+    "reminder",
+    "just-scrape",
+    "pyautogui-automation"
+  ]
+}

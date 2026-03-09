@@ -1,0 +1,168 @@
+#!/bin/bash
+
+set -e
+
+CLAWKIT_DIR="${HOME}/.clawkit"
+OPENCLAW_DIR="${HOME}/.openclaw"
+SKILLS_DIR="${OPENCLAW_DIR}/skills"
+CLAWHUB_CMD="clawhub"
+
+check_openclaw() {
+    if ! command -v openclaw &> /dev/null; then
+        echo "Error: openclaw not found. Install it first."
+        exit 1
+    fi
+}
+
+install_from_clawhub() {
+    local skill="$1"
+    if command -v "$CLAWHUB_CMD" &> /dev/null; then
+        echo "Installing $skill from clawhub..."
+        "$CLAWHUB_CMD" install "$skill" 2>/dev/null && return 0
+    fi
+    return 1
+}
+
+install_from_github() {
+    local skill="$1"
+    local repo=""
+    
+    # Map skill names to repos
+    case "$skill" in
+        skill-vetter) repo="skill-vetter" ;;
+        self-improving-agent) repo="self-improving-agent" ;;
+        mcp-duckgo) repo="mcp-duckgo" ;;
+        desktop-control) repo="desktop-control" ;;
+        *) repo="$skill" ;;
+    esac
+    
+    echo "Installing $skill from GitHub..."
+    local tmpdir=$(mktemp -d)
+    git clone --depth 1 "https://github.com/openclaw/${repo}.git" "$tmpdir/$skill" 2>/dev/null || \
+    git clone --depth 1 "https://github.com/clawhub/${repo}.git" "$tmpdir/$skill" 2>/dev/null || {
+        echo "Failed to clone $skill"
+        rm -rf "$tmpdir"
+        return 1
+    }
+    
+    mkdir -p "$SKILLS_DIR"
+    cp -r "$tmpdir/$skill" "$SKILLS_DIR/"
+    rm -rf "$tmpdir"
+    echo "Installed $skill to $SKILLS_DIR/"
+}
+
+install_skill() {
+    local skill="$1"
+    
+    if [ -d "$SKILLS_DIR/$skill" ]; then
+        echo "$skill already installed, skipping"
+        return 0
+    fi
+    
+    install_from_clawhub "$skill" || install_from_github "$skill"
+}
+
+install_essential() {
+    echo "Installing essential skills..."
+    
+    local skills=("skill-vetter" "self-improving-agent" "mcp-duckgo" "desktop-control")
+    
+    for skill in "${skills[@]}"; do
+        install_skill "$skill"
+    done
+    
+    echo ""
+    echo "Done. Essential skills installed."
+    echo "Restart OpenClaw or run: openclaw restart"
+}
+
+install_profile() {
+    local profile="$1"
+    local profile_file="$(dirname "$0")/profiles/${profile}.json"
+    
+    if [ ! -f "$profile_file" ]; then
+        echo "Error: Profile '$profile' not found"
+        exit 1
+    fi
+    
+    echo "Installing profile: $profile"
+    
+    # Parse JSON and install each skill
+    if command -v jq &> /dev/null; then
+        local skills=$(jq -r '.skills[]' "$profile_file" 2>/dev/null)
+        for skill in $skills; do
+            install_skill "$skill"
+        done
+    else
+        echo "Warning: jq not installed, using basic parsing"
+        grep -o '"[^"]*"' "$profile_file" | tr -d '"' | grep -v "skills\|name\|description" | while read skill; do
+            [ -n "$skill" ] && install_skill "$skill"
+        done
+    fi
+}
+
+list_available() {
+    echo "Available profiles:"
+    for f in "$(dirname "$0")/profiles/"*.json; do
+        [ -f "$f" ] || continue
+        local name=$(basename "$f" .json)
+        echo "  - $name"
+    done
+    echo ""
+    echo "Essential skills:"
+    cat "$(dirname "$0")/essential/skills.json" 2>/dev/null | grep '"name"' | cut -d'"' -f4 || \
+        echo "  skill-vetter, self-improving-agent, mcp-duckgo, desktop-control"
+}
+
+update_skills() {
+    echo "Updating installed skills..."
+    for dir in "$SKILLS_DIR"/*; do
+        [ -d "$dir" ] || continue
+        [ -d "$dir/.git" ] || continue
+        
+        local skill=$(basename "$dir")
+        echo "Updating $skill..."
+        (cd "$dir" && git pull --depth 1 2>/dev/null || echo "  $skill: update failed or not a git repo")
+    done
+}
+
+show_help() {
+    echo "clawkit - OpenClaw skill pack installer"
+    echo ""
+    echo "Usage:"
+    echo "  clawkit install essential       Install essential skills"
+    echo "  clawkit install --profile <p>   Install a profile"
+    echo "  clawkit list                    List available packs"
+    echo "  clawkit update                  Update installed skills"
+    echo "  clawkit help                    Show this help"
+}
+
+# Main
+check_openclaw
+
+case "${1:-}" in
+    install)
+        shift
+        if [ "$1" = "essential" ]; then
+            install_essential
+        elif [ "$1" = "--profile" ] && [ -n "$2" ]; then
+            install_profile "$2"
+        else
+            echo "Usage: clawkit install essential | --profile <name>"
+            exit 1
+        fi
+        ;;
+    list)
+        list_available
+        ;;
+    update)
+        update_skills
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        show_help
+        exit 1
+        ;;
+esac
