@@ -126,6 +126,43 @@ update_skills() {
     done
 }
 
+uninstall_clawkit() {
+    echo "Uninstalling clawkit..."
+    
+    local install_dir="${HOME}/.local/bin"
+    local clawkit_dir="${HOME}/.clawkit"
+    
+    # Remove binary
+    if [ -L "$install_dir/clawkit" ]; then
+        rm -f "$install_dir/clawkit"
+        echo "Removed $install_dir/clawkit"
+    fi
+    
+    # Ask about removing clawkit directory
+    if [ -d "$clawkit_dir" ]; then
+        read -p "Remove $clawkit_dir? (y/N) " confirm
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            rm -rf "$clawkit_dir"
+            echo "Removed $clawkit_dir"
+        else
+            echo "Kept $clawkit_dir (contains cached data)"
+        fi
+    fi
+    
+    # Ask about removing installed skills
+    if [ -d "$SKILLS_DIR" ]; then
+        read -p "Remove all skills installed by clawkit? (y/N) " confirm
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            rm -rf "$SKILLS_DIR"
+            echo "Removed $SKILLS_DIR"
+        fi
+    fi
+    
+    echo ""
+    echo "clawkit uninstalled."
+    echo "Note: You may want to remove the PATH export from ~/.bashrc or ~/.zshrc"
+}
+
 show_help() {
     echo "clawkit - OpenClaw skill pack installer"
     echo ""
@@ -134,6 +171,7 @@ show_help() {
     echo "  clawkit install --profile <p>   Install a profile"
     echo "  clawkit list                    List available packs"
     echo "  clawkit update                  Update installed skills"
+    echo "  clawkit uninstall               Remove clawkit and optionally skills"
     echo "  clawkit help                    Show this help"
 }
 
@@ -157,6 +195,9 @@ case "${1:-}" in
         ;;
     update)
         update_skills
+        ;;
+    uninstall)
+        uninstall_clawkit
         ;;
     help|--help|-h)
         show_help

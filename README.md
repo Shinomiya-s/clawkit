@@ -30,6 +30,9 @@ clawkit list
 
 # Update installed skills
 clawkit update
+
+# Uninstall clawkit
+clawkit uninstall
 ```
 
 ## What's included
